@@ -62,7 +62,9 @@ having count(*) > 50;
 select * from order_items;
 
 select
+	order_item_id,
     round(avg(price), 2) as avg_price,
     round(avg(freight_value), 2) as avg_freight
-from order_items;
+from order_items
+group by order_item_id;
 
