@@ -1,3 +1,6 @@
+
+
+
 -- 1. Revenue (SUM of price) by customer_state for delivered orders. Top 10 states.
 
 
@@ -57,17 +60,19 @@ join sellers s
 -- 5. For 5 orders, show item revenue and payment total side by side — without fan-out.
 
 select 
-	oi.order_id,
-	SUM(oi.price) as item_revenue,
-	(
-		select SUM(op.payment_value)
-		from order_payments as op
-		where op.order_id = oi.order_id ) as payment_total
-from order_items as oi
-group by oi.order_id 
-order by oi.order_id
+	i.order_id, i.item_revenue, p.paid
+from (
+    select order_id, SUM(price + freight_value) as item_revenue
+    from raw.order_items 
+    group by order_id
+) i
+join (
+    select order_id, SUM(payment_value) as paid
+    from raw.order_payments 
+    group by order_id
+) p
+    on p.order_id = i.order_id
 limit 5;
-
 
 select * from order_items;
 
@@ -76,7 +81,6 @@ select * from order_payments;
 
 -- 6. Find orders where payments differ from price + freight by more than 1.00.
 
-
 with payment_totals as (
     select 
         order_id,
@@ -84,7 +88,6 @@ with payment_totals as (
     from order_payments
     group by order_id
 )
-
 select
     oi.order_id,
     SUM(oi.price) as item_total,
@@ -95,7 +98,7 @@ select
         SUM(oi.price) + SUM(oi.freight_value)
     ) as difference
 from order_items as oi
-join payment_totals as p
+join payment_totals as p 
     on oi.order_id = p.order_id
 group by
     oi.order_id,
